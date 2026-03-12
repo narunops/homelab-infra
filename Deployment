@@ -1,0 +1,7 @@
+## Future Improvements
+
+- Deploy Snipe-IT container for asset management
+- Add SIEM monitoring (Wazuh)
+- Expand Zabbix monitoring dashboards
+- Add backup strategy for VMs
+
