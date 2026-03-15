@@ -1,0 +1,67 @@
+## Key discovery — 2026-03-15
+NetworkManager runs its own internal dnsmasq instance (pid 5174)
+with --conf-file=/dev/null (ignores /etc/dnsmasq.conf entirely).
+System dnsmasq.service conflicts with it — masked permanently.
+DHCP for LAN is handled by NetworkManager shared connection.
+No manual dnsmasq config needed.
+
+[Arunarch ~]$ sudo systemctl status NetworkManager
+● NetworkManager.service - Network Manager
+     Loaded: loaded (/usr/lib/systemd/system/NetworkManager.service; enabled; preset: disabled)
+     Active: active (running) since Sun 2026-03-15 12:59:17 IST; 5h 16min ago
+ Invocation: 3c13add9918d4c8689c176e15e767d6e
+       Docs: man:NetworkManager(8)
+   Main PID: 755 (NetworkManager)
+      Tasks: 5 (limit: 28641)
+     Memory: 17.4M (peak: 18.2M)
+        CPU: 15.129s
+     CGroup: /system.slice/NetworkManager.service
+             ├─ 755 /usr/bin/NetworkManager --no-daemon
+             └─5174 /usr/bin/dnsmasq --conf-file=/dev/null --no-hosts --keep-in-foreground --bind-interfaces --except-interface=lo ->
+
+Mar 15 16:37:59 Arunarch dnsmasq-dhcp[5174]: DHCPACK(enp0s31f6) 192.168.1.154 bc:0f:f3:88:9d:0b MASKXXXXXX
+Mar 15 17:02:02 Arunarch NetworkManager[755]: <info>  [1773574322.0551] dhcp4 (wlan0): state changed new lease, address=10.133.213.2>
+Mar 15 17:05:26 Arunarch dnsmasq-dhcp[5174]: DHCPREQUEST(enp0s31f6) 192.168.1.154 bc:0f:f3:88:9d:0b
+Mar 15 17:05:26 Arunarch dnsmasq-dhcp[5174]: DHCPACK(enp0s31f6) 192.168.1.154 bc:0f:f3:88:9d:0b MASKXXXXXX
+Mar 15 17:32:01 Arunarch NetworkManager[755]: <info>  [1773576121.0095] dhcp4 (wlan0): state changed new lease, address=10.133.213.2>
+Mar 15 17:32:53 Arunarch dnsmasq-dhcp[5174]: DHCPREQUEST(enp0s31f6) 192.168.1.154 bc:0f:f3:88:9d:0b
+Mar 15 17:32:53 Arunarch dnsmasq-dhcp[5174]: DHCPACK(enp0s31f6) 192.168.1.154 bc:0f:f3:88:9d:0b MASKXXXXXX
+Mar 15 17:59:54 Arunarch dnsmasq-dhcp[5174]: DHCPREQUEST(enp0s31f6) 192.168.1.154 bc:0f:f3:88:9d:0b
+Mar 15 17:59:54 Arunarch dnsmasq-dhcp[5174]: DHCPACK(enp0s31f6) 192.168.1.154 bc:0f:f3:88:9d:0b MASKXXXXXX
+Mar 15 18:02:00 Arunarch NetworkManager[755]: <info>  [1773577920.0159] dhcp4 (wlan0): state changed new lease, address=10.133.213.2>
+
+
+
+
+[Arunarch ~]$ sudo systemctl disable dnsmasq
+Removed '/etc/systemd/system/multi-user.target.wants/dnsmasq.service'.
+[Arunarch ~]$ sudo systemctl stop dnsmasq
+[Arunarch ~]$ sudo systemctl mask dnsmasq
+Created symlink '/etc/systemd/system/dnsmasq.service' → '/dev/null'.
+[Arunarch ~]$ sudo systemctl status dnsmasq
+× dnsmasq.service
+     Loaded: masked (Reason: Unit dnsmasq.service is masked.)
+     Active: failed (Result: exit-code) since Sun 2026-03-15 15:13:08 IST; 3h 2min ago
+ Invocation: 92748b4e9ae24b1ca1e856f8c6190b36
+   Main PID: 6526 (code=exited, status=2)
+   Mem peak: 1.9M
+        CPU: 63ms
+---
+
+**actual working architecture — now fully understood:**
+```
+NetworkManager (pid 755)
+├── manages wlan0 (gets DHCP from hotspot)
+├── manages enp0s31f6 (static 192.168.1.105)
+├── handles NAT/MASQUERADE to wlan0
+└── runs dnsmasq internally (pid 5174)
+    └── serves DHCP to LAN devices
+        └── Win11 → 192.168.1.154 ✓
+            Proxmox → 192.168.1.101 ✓
+
+ipv4.method shared = NetworkManager automatically does:
+Static IP on interface ✓
+DHCP server for connected devices ✓
+NAT/forwarding ✓
+
+One tool, zero conflicts, already installed.
