@@ -19,7 +19,6 @@ Since I'm using **NetworkManager** on Arch, Instead, manually adding ip addr you
 Here is how to set up your specific IP schema (`192.168.1.105`) and ensure your laptop acts as the "Internet Provider" for my Proxmox server.
 
 ### 1. Configure the Static IP on Arch
-
 Assuming your ethernet interface is named `enp2s0` (check with `ip link`), run these commands:
 
 Bash
