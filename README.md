@@ -1,7 +1,17 @@
 # homelab-infrastructure
-Personal infrastructure lab built using Linux, virtualization, and monitoring tools to practice networking, system administration, and security concepts.
+Personal infrastructure lab running production-grade services on consumer hardware. Built to practice IT/OT security, network 
+segmentation, system administration, and infrastructure monitoring
 
 ---
+
+## Hardware
+
+| Device | Specs | Role |
+|--------|-------|------|
+| HP EliteBook 840 G3 | 16GB RAM, 256GB NVMe, Arch Linux | Gateway · Firewall · Monitoring · DNS |
+| HP ProDesk 600 G5 SFF | 8GB RAM, 256GB NVMe, Proxmox VE | Primary hypervisor — VMs and LXC |
+| Nokia ADSL modem | 4-port | Dumb switch — DHCP disabled |
+| Mobile hotspot | 4G / phone | WAN uplink (wlan0) |
 
 ## Overview
 
@@ -17,71 +27,36 @@ This homelab simulates a small infrastructure environment with:
 The lab is used to practice **Linux administration, networking, and infrastructure monitoring**.
 
 ---
-
-## Hardware
-
-| Device         | Specs                                      | Role                                  | Notes                                                       |
-| -------------- | ------------------------------------------ | ------------------------------------- |------------------------------------------------------------ |
-| Arch Laptop    | HP EliteBook 840 G3, 16GB RAM, 256GB NVMe  | Daily driver + Gateway + Zabbix Server| NAT/IPv4 forwarding, MASQUERADE, Tailscale VPN, Proxmox nodes|
-|Proxmox Node 1  | HP ProDesk 600 G5 SFF, 8GB RAM, 256GB NVMe | Primary virtualization host           | qm 1 : Ubuntu Server, LXC Snipe-IT, static IP |
-| Mobile Hotspot | wifi (wlan0)  or Mobile etherthing         | Internet source                       | Provides temporary internet; either Arch or Proxmox can connect|      
-| Nokia Modem    | ADSL modem                                 | Dumb switch                           | DHCP off, provides LAN connectivity to Proxmox nodes            |                              
+                              
 ## Network Architecture
 
 ![Network Diagram](network-diagram.png)
 
-Network configuration:
+## Network zones
+| Zone           | Subnet      | Purpose                        |
+|-----          -|--------     |---------                       |
+| Infrastructure | 192.168.x.x | Proxmox, VMs, LXC — static IPs |
+| Guest | 10.x.x.x | Client devices — isolated from infra       |
 
-- Subnet: 192.168.1.0/24
-- Gateway: 192.168.1.105
-- DNS: Pi-hole (192.168.1.150)
-- Secondary DNS: 1.1.1.1
------
-## Virtual Machines & Containers
+## Services
 
-### Proxmox Host
+| Service        | Platform | Purpose |
 
-**VM 1**
-Ubuntu Server  
-Zabbix Agent
+| OPNsense       | Arch Linux (bare metal) | Firewall, NAT, zone isolation |
+| Zabbix server  | Arch Linux | Infrastructure monitoring |
+| Pi-hole        | Arch Linux | DNS filtering, Cloudflare upstream |
+| Proxmox VE     | HP ProDesk | Hypervisor |
+| AlmaLinux VM   | Proxmox | RHEL-compatible test environment |
+| Windows Server | Proxmox VM | Active Directory (in progress) |
+| Snipe-IT       | Proxmox LXC | IT asset management |
 
-**VM 2**
-Pi-hole DNS filtering
-
-**LXC Containers**
-
-Planned:
-- Snipe-IT (IT asset management)
-
-
-## Services Running
-Zabbix
-Pi-hole
-Monitoring
-
-### Zabbix Monitoring
-Infrastructure monitoring for:
-- Proxmox node
-- system performance
-- network health
-
--------
-
-### Pi-hole DNS
-Network-wide DNS filtering and ad blocking.
-
-----
-
-# Skills Demonstrated
-
-- Linux system administration
-- Network configuration and NAT
-- Virtualization using Proxmox
-- Infrastructure monitoring using Zabbix
-- DNS filtering with Pi-hole
-- SSH remote administration
-
----
+## Skills demonstrated
+- Network segmentation and firewall rule management (OPNsense)
+- Infrastructure monitoring with Zabbix server/agent architecture
+- DNS filtering and recursive resolver configuration
+- Hypervisor management — VM and LXC lifecycle
+- Linux system administration (Arch, AlmaLinux)
+- NAT, IPv4 forwarding, MASQUERADE on Linux
 
 ## Future Improvements
 
