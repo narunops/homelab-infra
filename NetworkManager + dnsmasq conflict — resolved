@@ -1,0 +1,39 @@
+# NetworkManager + dnsmasq conflict — resolved
+
+**Date:** 2026-03-15  
+**System:** Arch Linux / HP EliteBook 840 G3
+
+## Problem
+Running both system `dnsmasq.service` and NetworkManager caused 
+a DHCP/DNS conflict. NM spawns its own internal dnsmasq instance 
+(pid-managed, `--conf-file=/dev/null`) that ignores the system 
+dnsmasq config entirely.
+
+## Root cause
+NetworkManager's `ipv4.method=shared` automatically:
+- Assigns static IP on LAN interface
+- Runs internal dnsmasq for DHCP
+- Handles NAT/MASQUERADE
+
+System dnsmasq was redundant and conflicting.
+
+## Fix
+```bash
+sudo systemctl stop dnsmasq
+sudo systemctl disable dnsmasq
+sudo systemctl mask dnsmasq
+```
+
+## Final verified stack
+| Service | State | Role |
+|---------|-------|------|
+| NetworkManager | active | Everything — interfaces, NAT, DHCP |
+| systemd-resolved | active | Arch's own DNS backend via NM |
+| systemd-networkd | inactive | Disabled — NM handles this |
+| dnsmasq.service | masked | Conflicts with NM's internal instance |
+
+## Why keep systemd-resolved?
+NM uses it as DNS backend for the Arch host itself.  
+Remove it and pacman, browser, Tailscale all lose DNS.  
+LAN clients (Proxmox, Win11) get DNS from NM's internal  
+dnsmasq directly — they never touch systemd-resolved.
